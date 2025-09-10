@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.XR;
@@ -10,22 +11,24 @@ public class PlayerMovement : MonoBehaviour
 	[SerializeField] private Rigidbody2D rb;
 
 	private Vector2 moveDir;
+	private Vector2 lastDir;
 
 	[SerializeField] private float dashForce;
 	[SerializeField] private float dashTime;
 	[SerializeField] private float dashCooldown;
 	private bool isDashing;
 	private bool canDash = true;
+	private bool isWalking;
 
 	[SerializeField] private Animator anim;
 	[SerializeField] private SpriteRenderer sr;
 
-	private bool horiz;
-
 	void Update()
 	{
 		if (!isDashing)
+		{
 			ProcessInputs();
+		}
 
 		if (Input.GetKeyDown(KeyCode.Space) && canDash && moveDir != Vector2.zero)
 		{
@@ -48,54 +51,28 @@ public class PlayerMovement : MonoBehaviour
 
 		moveDir = new Vector2(moveX, moveY).normalized;
 
-
-		// Horizontal movement
-		switch (moveDir.x)
+		if (moveDir != Vector2.zero)
 		{
-			// Moving right
-			case > 0:
-				anim.SetBool("RunHor", true);
-				sr.flipX = false;
-				horiz = true;
-				break;
-			// Moving left
-			case < 0:
-				anim.SetBool("RunHor", true);
-				sr.flipX = true;
-				horiz = true;
-				break;
-			// Stopped
-			case 0:
-				anim.SetBool("RunHor", false);
-				sr.flipX = false;
-				horiz = false;
-				break;
+			lastDir = moveDir;
 		}
-
-		// Vertical movement
-		if (!horiz)
+		else
 		{
-			switch (moveDir.y)
-			{
-				case > 0:
-					anim.SetBool("RunUp", true);
-					anim.SetBool("RunDown", false);
-					break;
-				case < 0:
-					anim.SetBool("RunDown", true);
-					anim.SetBool("RunUp", false);
-					break;
-				case 0:
-					anim.SetBool("RunUp", false);
-					anim.SetBool("RunDown", false);
-					break;
-			}
+			isWalking = false;
+			anim.SetBool("isWalking", isWalking);
+
+			anim.SetFloat("LastInputX", lastDir.x);
+			anim.SetFloat("LastInputY", lastDir.y);
 		}
 	}
 
 	void Move()
 	{
 		rb.velocity = moveDir * moveSpeed;
+		isWalking = true;
+		anim.SetBool("isWalking", isWalking);
+
+		anim.SetFloat("InputX", moveDir.x);
+		anim.SetFloat("InputY", moveDir.y);
 	}
 
 	IEnumerator Dash()
